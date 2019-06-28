@@ -6,5 +6,5 @@ let &runtimepath.=",".escape(expand("<sfile>:p:h"), "\,")
 hi InsertShadow ctermfg=238 guifg=#444444
 
 let g:wip_hl_group = "InsertShadow"
-" let g:wip_focus_size = 1
+let g:wip_focus_size = 1
 

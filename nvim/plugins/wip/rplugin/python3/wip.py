@@ -9,56 +9,45 @@ class Wip:
         self.focus_size = None
         self.hl_src = None
         self.window = None
-        self.line_num = None
-        self.match_ids = []
+        self.cursor_line = None
+        self.match_ids = set()
 
     def focus(self):
         # on_insert_enter/leave are asynchronous handlers
         # this can lead to race conditions:
         #     on_insert_leave deletes self.window while at the same time on_insert_enter already set
         #     it; then on_insert_enter tries to use invalid window
-        # how to synchronise?
+        # how to synchronize?
         #     the simplest solution is sync=True in handlers
+
         if self.window is None:
             self.window = self.nvim.current.window
-            #  self.nvim.out_write("#dbg window is {}\n".format(self.window))
 
-        current_line_num = self.window.cursor[0]  # 1-indexed
-        if self.line_num != current_line_num:
-            self.line_num = current_line_num
-            line_count = self.window.buffer.api.line_count()
-            row = self.nvim.funcs.winline()
-            height = self.window.height
+        # lines are 1-indexed
+        cursor_line = self.window.cursor[0]
+        if self.cursor_line != cursor_line:
+            self.cursor_line = cursor_line
 
-            #  self.nvim.out_write("#dbg line {} (line count {}) row {} (height {})\n".format(
-                #  self.line_num, line_count, row, height))
+            # first visible line in window
+            top_line = self.nvim.funcs.line("w0")
+            # last visible line in window
+            bottom_line = self.nvim.funcs.line("w$")
 
-            # first line of the window or first line of the buffer
-            start = max(1, current_line_num - row + 1)
-            # last line of the window or last line of the buffer
-            end = min(line_count, start + height)
-            # first line in focus or first line of the buffer
-            upper = max(1, current_line_num - self.focus_size)
-            # last line in focus or last line of the buffer
-            lower = min(line_count, current_line_num + self.focus_size)
-            if start < upper:
-                self.match_ids.extend([self.nvim.funcs.matchaddpos(self.hl_group, [n])
-                                       for n in range(start, upper)])
-            if end > lower:
-                self.match_ids.extend([self.nvim.funcs.matchaddpos(self.hl_group, [n])
-                                       for n in range(lower + 1, end + 1)])
+            # first line in focus
+            focus_start = max(top_line, cursor_line - self.focus_size)
+            # last line in focus
+            focus_end = min(bottom_line, cursor_line + self.focus_size)
 
-            # optimize to not shadow the whole buffer, just what is on the screen
-#              hl_items = []
-            #  upper = current_line_num - self.focus_size
-            #  # shadow from the start to but not including upper (upper is the first line in focus)
-            #  if upper > 0:
-                #  hl_items.extend([(self.hl_group, n) for n in range(upper)])
-            #  lower = current_line_num + self.focus_size
-            #  # shadow from but not including lower to the end (lower is the last line in focus)
-            #  if lower < line_count - 1:
-                #  hl_items.extend([(self.hl_group, n) for n in range(lower + 1, line_count)])
-            #  self.buffer.update_highlights(self.hl_src, hl_items, async_=True)
+            for match_id in self.match_ids:
+                self.nvim.funcs.matchdelete(match_id)
+            self.match_ids.clear()
+
+            for line in range(top_line, focus_start):
+                match_id = self.nvim.funcs.matchaddpos(self.hl_group, [line])
+                self.match_ids.add(match_id)
+            for line in range(focus_end + 1, bottom_line + 1):
+                match_id = self.nvim.funcs.matchaddpos(self.hl_group, [line])
+                self.match_ids.add(match_id)
 
     @pynvim.autocmd("InsertEnter", pattern="*", sync=True)
     def on_insert_enter(self):
@@ -75,11 +64,13 @@ class Wip:
 
     @pynvim.autocmd("InsertLeave", pattern="*", sync=True)
     def on_insert_leave(self):
-        # clear the shadow highlighting for buffer that was shadowed
-        # clear cached line and buf
         self.window = None
-        self.line_num = None
+        self.cursor_line = None
         for match_id in self.match_ids:
             self.nvim.funcs.matchdelete(match_id)
-        self.match_ids = []
+        self.match_ids.clear()
+
+    @pynvim.autocmd("CursorMovedI", pattern="*", sync=True)
+    def on_cursor_moved(self):
+        self.focus()
 
