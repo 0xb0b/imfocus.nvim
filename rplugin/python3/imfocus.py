@@ -37,7 +37,7 @@ def rgb_pack(channels):
 
 
 @pynvim.plugin
-class Wip:
+class ImFocus:
     def __init__(self, nvim_ref):
         # do not do anything with non-trivial side-effects here! seriously.
         self.nvim = nvim_ref
