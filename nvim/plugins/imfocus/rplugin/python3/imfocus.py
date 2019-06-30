@@ -1,15 +1,17 @@
 import pynvim
 from math import sqrt
 
-
+plugin_name = "imfocus"
 hl_group_normal = "Normal"
-default_hl_group = "wipInsertShadow"
+default_hl_group = plugin_name + "Shadow"
 default_lightness = 0.2
 
-g_focus_size = "wip_focus_size"
-g_hl_group = "wip_hl_group"
-g_lightness = "wip_lightness"
-g_soft_shadow = "wip_soft_shadow"
+
+# global variable names
+g_focus_size = plugin_name + "_size"
+g_hl_group = plugin_name + "_hl_group"
+g_lightness = plugin_name + "_lightness"
+g_soft_shadow = plugin_name + "_soft_shadow"
 
 
 def rgb_channels(color):
