@@ -3,7 +3,7 @@ from pynvim.api.nvim import NvimError
 from imfocus.color import rgb_blend, rgb_decompose, rgb_to_vim_color
 
 
-plugin_name = "imfocus"
+plugin_name = __name__.partition(".")[0]
 hl_group_normal = "Normal"
 default_hl_group = plugin_name + "Shadow"
 default_lightness = 0.2
@@ -43,7 +43,8 @@ class RemotePlugin:
         rgb_hl = self.get_option("gui_running", False) or self.get_option("termguicolors", False)
         term_hl = (self.get_option("t_Co") == 256)
         if not rgb_hl and not term_hl:
-            self.nvim.err_write("<plugin_name> is disabled, only rgb or 256 colors are supported\n")
+            self.nvim.err_write(
+                "{} is disabled, only rgb or 256 colors are supported\n".format(plugin_name))
             # TODO disable plugin
             return
 
@@ -51,7 +52,7 @@ class RemotePlugin:
         fg = normal_hl_map.get("foreground")
         bg = normal_hl_map.get("background")
         if fg is None or bg is None:
-            self.nvim.err_write("<plugin_name> is disabled, Normal colors undefined\n")
+            self.nvim.err_write("{} is disabled, Normal colors undefined\n".format(plugin_name))
             # TODO disable plugin
             return
 
