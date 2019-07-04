@@ -17,15 +17,16 @@ g_soft_shadow = plugin_name + "_soft_shadow"
 
 class RemotePlugin:
     def __init__(self, nvim):
-        # do not do anything with non-trivial side-effects here! seriously.
         self.nvim = nvim
         self.hl_src = self.nvim.new_highlight_source()
+
         # plugin settings
         self.focus_size = max(0, self.nvim.vars.get(g_focus_size, 0))
         self.set_hl_group()
         self.lightness = None
         # hard shadow by default
         self.has_soft_shadow = self.nvim.vars.get(g_soft_shadow, 0)
+
         # state
         self.window = None
         self.cursor_line = None
