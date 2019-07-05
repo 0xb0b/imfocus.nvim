@@ -1,6 +1,7 @@
 from math import sqrt
 from pynvim.api.nvim import NvimError
-from imfocus.color import rgb_blend, rgb_decompose, rgb_to_vim_color
+from imfocus.color import (rgb_blend, rgb_decompose, rgb_to_vim_color,
+                           term_to_rgb, rgb_to_closest_term)
 
 
 plugin_name = __name__.partition(".")[0]
@@ -40,32 +41,37 @@ class RemotePlugin:
             self.highlight()
 
     def highlight(self):
-        # get Normal foreground color and blend into background
-        rgb_hl = self.get_option("gui_running", False) or self.get_option("termguicolors", False)
+        rgb_hl = (self.get_option("gui_running", False)
+                  or self.get_option("termguicolors", False))
         term_hl = (self.get_option("t_Co") == 256)
         if not rgb_hl and not term_hl:
-            self.nvim.err_write(
-                "{} is disabled, only rgb or 256 colors are supported\n".format(plugin_name))
+            self.nvim.err_write("{} is disabled, only rgb or 256 terminal "
+                "colors are supported\n".format(plugin_name))
             # TODO disable plugin
             return
 
+        # get Normal foreground color and blend into background
         normal_hl_map = self.nvim.api.get_hl_by_name(hl_group_normal, rgb_hl)
         fg = normal_hl_map.get("foreground")
         bg = normal_hl_map.get("background")
         if fg is None or bg is None:
-            self.nvim.err_write("{} is disabled, Normal colors undefined\n".format(plugin_name))
+            self.nvim.err_write("{} is disabled, Normal colors undefined\n"
+                .format(plugin_name))
             # TODO disable plugin
             return
 
         # blend shadow color
         self.lightness = self.nvim.vars.get(g_lightness, default_lightness)
         if rgb_hl:
-            shadow_color = rgb_to_vim_color(
-                rgb_blend(rgb_decompose(bg), rgb_decompose(fg), self.lightness))
+            shadow_color = rgb_to_vim_color(rgb_blend(rgb_decompose(bg),
+                rgb_decompose(fg), self.lightness))
+            self.nvim.funcs.execute("hi {} guifg={}"
+                .format(self.hl_group, shadow_color))
         else:
-            # TODO cterm case
-            shadow_color = "#444444"
-        self.nvim.funcs.execute("hi {} guifg={}".format(self.hl_group, shadow_color))
+            shadow_color = rgb_to_closest_term(rgb_blend(term_to_rgb(bg),
+                term_to_rgb(fg), self.lightness))
+            self.nvim.funcs.execute("hi {} ctermfg={}"
+                    .format(self.hl_group, shadow_color))
 
     def clear_hl(self):
         for match_id in self.match_ids:
@@ -75,8 +81,9 @@ class RemotePlugin:
     def focus(self):
         # on_insert_enter/leave are asynchronous handlers
         # this can lead to race conditions:
-        #     on_insert_leave deletes self.window while at the same time on_insert_enter already set
-        #     it; then on_insert_enter tries to use invalid window
+        #     on_insert_leave deletes self.window while at the same time
+        #     on_insert_enter already set it;
+        #     then on_insert_enter tries to use invalid window
         # how to synchronize?
         #     the simplest solution is sync=True in handlers
 

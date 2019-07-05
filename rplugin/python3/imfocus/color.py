@@ -1,3 +1,6 @@
+from itertools import chain
+
+
 # look-up table for the first 16 of 256 terminal colors
 ansi16 = (
     # ANSI normal 0 - 7
@@ -21,27 +24,56 @@ ansi16 = (
 )
 
 
-def cterm_to_rgb(index):
+def term_to_rgb(index):
     if index < 16:
         return ansi16[index]
     elif index < 232:
-        # 6x6x6 RGB colors 16 - 231
+        # 6x6x6 rgb colors: 16 - 231
+        # each channel in terminal color cube has one of the 6 values:
+        # 0, 0x5f, 0x87, 0xaf, 0xd7, 0xff
         index -= 16
         b = index % 6
-        index /= 6
+        index //= 6
         g = index % 6
-        r = index / 6
-        return tuple([95 + (c - 1) * 40 if c > 0 else 0 for c in (r, g, b)])
+        r = index // 6
+        return [95 + (c - 1) * 40 if c > 0 else 0 for c in (r, g, b)]
     else:
-        # grayscale colors 232 - 255
-        return tuple([8 + (index - 232) * 10] * 3)
+        # grayscale colors: 232 - 255
+        return [8 + (index - 232) * 10] * 3
 
 
-def rgb_blend(rgb_a, rgb_b, coeff):
-    # blending coefficient 0 results in pure color1, coefficient 1 results in pure color2
+def distance(rgb1, rgb2, weights=(1, 1, 1)):
+    return sum([w * (ch1 - ch2)**2 for w, ch1, ch2 in zip(weights, rgb1, rgb2)])
+
+
+def rgb_to_closest_term(rgb):
+    index = 0
+    min_distance = None
+    # check ansi16 and grayscale colors
+    for i in chain(range(16), range(232, 256)):
+        if (min_distance is None
+                or distance(rgb, term_to_rgb(i)) < min_distance):
+            min_distance = distance
+            index = i
+    # check the closest color in 6x6x6 terminal color cube
+    def get_channel216(c):
+        if c < 95:
+            return round(c / 95)
+        else:
+            return round((c - 95) / 40) + 1
+    r216, g216, b216 = map(get_channel216, rgb)
+    i = (r216 * 6 + g216) * 6 + b216
+    if distance(rgb, term_to_rgb(i)) < min_distance:
+        index = i
+    return index
+
+
+def rgb_blend(rgb1, rgb2, coeff):
+    # blending coefficient 0 results in pure color1,
+    # coefficient 1 results in pure color2
     # linear
-    return [round((1 - coeff) * channel_a + coeff * channel_b)
-            for channel_a, channel_b in zip(rgb_a, rgb_b)]
+    return [round((1 - coeff) * ch1 + coeff * ch2)
+            for ch1, ch2 in zip(rgb1, rgb2)]
 
 
 def rgb_decompose(color):
