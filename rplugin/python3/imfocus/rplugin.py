@@ -23,10 +23,10 @@ class RemotePlugin:
 
         # plugin settings
         self.focus_size = max(0, self.nvim.vars.get(g_focus_size, 0))
-        self.set_hl_group()
-        self.lightness = None
         # hard shadow by default
         self.has_soft_shadow = self.nvim.vars.get(g_soft_shadow, 0)
+        self.lightness = None
+        self.set_hl_group()
 
         # state
         self.window = None
@@ -47,7 +47,8 @@ class RemotePlugin:
         if not rgb_hl and not term_hl:
             self.nvim.err_write("{} is disabled, only rgb or 256 terminal "
                 "colors are supported\n".format(plugin_name))
-            # TODO disable plugin
+            # this effectively disables plugin
+            self.hl_group = None
             return
 
         # get Normal foreground color and blend into background
@@ -57,7 +58,8 @@ class RemotePlugin:
         if fg is None or bg is None:
             self.nvim.err_write("{} is disabled, Normal colors undefined\n"
                 .format(plugin_name))
-            # TODO disable plugin
+            # this effectively disables plugin
+            self.hl_group = None
             return
 
         # blend shadow color
@@ -73,10 +75,8 @@ class RemotePlugin:
             self.nvim.funcs.execute("hi {} ctermfg={}"
                     .format(self.hl_group, shadow_color))
 
-    def clear_hl(self):
-        for match_id in self.match_ids:
-            self.nvim.funcs.matchdelete(match_id)
-        self.match_ids.clear()
+    def ready(self):
+        return self.hl_group is not None
 
     def focus(self):
         # on_insert_enter/leave are asynchronous handlers
@@ -117,10 +117,18 @@ class RemotePlugin:
         self.cursor_line = None
         self.clear_hl()
 
+    def clear_hl(self):
+        for match_id in self.match_ids:
+            self.nvim.funcs.matchdelete(match_id)
+        self.match_ids.clear()
+
     def get_option(self, name, default=None):
         try:
             option = self.nvim.api.get_option(name)
         except NvimError:
             option = default
         return option
+
+    def debug(self, msg):
+        self.nvim.out_write(msg + "\n")
 
