@@ -26,19 +26,16 @@ class RemotePlugin:
         # hard shadow by default
         self.has_soft_shadow = self.nvim.vars.get(g_soft_shadow, 0)
         self.lightness = None
-        self.set_hl_group()
-
-        # state
-        self.window = None
-        self.cursor_line = None
-        self.match_ids = set()
-
-    def set_hl_group(self):
+        # set up highlight group
         self.hl_group = self.nvim.vars.get(g_hl_group, None)
         if self.hl_group is None:
             self.hl_group = default_hl_group
         if not self.nvim.funcs.hlexists(self.hl_group):
             self.highlight()
+
+        # state
+        self.cursor_line = None
+        self.match_ids = set()
 
     def highlight(self):
         rgb_hl = (self.get_option("gui_running", False)
@@ -51,7 +48,7 @@ class RemotePlugin:
             self.hl_group = None
             return
 
-        # get Normal foreground color and blend into background
+        # get Normal foreground color and blend into background to get shadow color
         normal_hl_map = self.nvim.api.get_hl_by_name(hl_group_normal, rgb_hl)
         fg = normal_hl_map.get("foreground")
         bg = normal_hl_map.get("background")
@@ -61,8 +58,6 @@ class RemotePlugin:
             # this effectively disables plugin
             self.hl_group = None
             return
-
-        # blend shadow color
         self.lightness = self.nvim.vars.get(g_lightness, default_lightness)
         if rgb_hl:
             shadow_color = rgb_to_vim_color(rgb_blend(rgb_decompose(bg),
@@ -79,18 +74,8 @@ class RemotePlugin:
         return self.hl_group is not None
 
     def focus(self):
-        # on_insert_enter/leave are asynchronous handlers
-        # this can lead to race conditions:
-        #     on_insert_leave deletes self.window while at the same time
-        #     on_insert_enter already set it;
-        #     then on_insert_enter tries to use invalid window
-        # how to synchronize?
-        #     the simplest solution is sync=True in handlers
 
-        if self.window is None:
-            self.window = self.nvim.current.window
-
-        cursor_line = self.window.cursor[0]
+        cursor_line = self.nvim.current.window.cursor[0]
         if self.cursor_line != cursor_line:
             self.cursor_line = cursor_line
 
@@ -113,7 +98,6 @@ class RemotePlugin:
                 self.match_ids.add(match_id)
 
     def unfocus(self):
-        self.window = None
         self.cursor_line = None
         self.clear_hl()
 
