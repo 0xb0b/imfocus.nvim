@@ -1,73 +1,54 @@
 import pynvim
-from imfocus.rplugin import RemotePlugin
+from imfocus.rplugin import PlugImpl, focus, unfocus
+from imfocus.rplugin import enable as enable_impl
+from imfocus.rplugin import disable as disable_impl
 
+# https://pynvim.readthedocs.io/en/latest/usage/remote-plugins.html
+# @pynvim.plugin decorator makes a class discoverable as a plugin and provides
+# API as nvim;
+# nvim object is then passed to the plugin implementation
+#
+# if a plugin is not a single script file but a python package (a folder with
+# several files) then it works only if the plugin class and handlers are in
+# __init__.py.
+# so the structure in this case is a minimal plugin class with all the handlers
+# in __init__.py along a possibly separate implementation and other package files
 
 @pynvim.plugin
 class ImFocus:
     def __init__(self, nvim):
         # do not do anything that has non-trivial side-effects here! seriously.
-        # see note on this page: https://pynvim.readthedocs.io/en/latest/usage/remote-plugins.html
+        # (including the initialization of the plugin implementation)
+        # see the note: https://pynvim.readthedocs.io/en/latest/usage/remote-plugins.html
         self.nvim = nvim
-        self._plugin = None
-        self._enable()
+        self.impl = None
 
-    def _enable(self):
-        self._on_insert_enter = self.handle_on_insert_enter
-        self._on_cursor_moved = self.handle_on_cursor_moved
-        self._on_insert_leave = self.handle_on_insert_leave
-
-    def _disable(self):
-        if self._plugin is not None:
-            self._plugin.unfocus()
-            self._plugin = None
-        self._on_insert_enter = do_nothing
-        self._on_cursor_moved = do_nothing
-        self._on_insert_leave = do_nothing
-
-    # if on_insert_enter/leave and others are asynchronous handlers
-    # then this can lead to race conditions:
-    #     on_insert_leave clears state variable while at the same time
-    #     on_insert_enter already set it;
+    # handlers have to be synchronous to avoid race conditions, like:
+    #     on_insert_leave clears state variable when on_insert_enter has already set it;
     #     then on_insert_enter tries to use invalid variable
-    # how to synchronize?
-    #     the simplest solution is sync=True in handlers
 
     @pynvim.autocmd("InsertEnter", pattern="*", sync=True)
     def on_insert_enter(self):
-        self._on_insert_enter()
+        if self.impl is None:
+            self.impl = PlugImpl(self.nvim)
+        focus(self.nvim, self.impl)
 
     @pynvim.autocmd("CursorMovedI", pattern="*", sync=True)
     def on_cursor_moved(self):
-        self._on_cursor_moved()
+        focus(self.nvim, self.impl)
 
     @pynvim.autocmd("InsertLeave", pattern="*", sync=True)
     def on_insert_leave(self):
-        self._on_insert_leave()
+        unfocus(self.nvim, self.impl)
 
     @pynvim.command("Imfocuson", sync=True)
     def enable(self):
-        self._enable()
+        if self.impl is None:
+            self.impl = PlugImpl(self.nvim)
+        enable_impl(self.nvim, self.impl)
 
     @pynvim.command("Imfocusoff", sync=True)
     def disable(self):
-        self._disable()
-
-    def handle_on_insert_enter(self):
-        if self._plugin is None:
-            self._plugin = RemotePlugin(self.nvim)
-            if not self._plugin.ready():
-                self._plugin = None
-                self._disable()
-                return
-        self._plugin.focus()
-
-    def handle_on_cursor_moved(self):
-        self._plugin.focus()
-
-    def handle_on_insert_leave(self):
-        self._plugin.unfocus()
-
-
-def do_nothing(*args, **kwargs):
-    pass
+        if self.impl is not None:
+            disable_impl(self.nvim, self.impl)
 
