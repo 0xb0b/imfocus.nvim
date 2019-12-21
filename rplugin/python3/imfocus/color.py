@@ -87,5 +87,5 @@ def rgb_decompose(color):
 def rgb_to_vim_color(rgb):
     r, g, b = rgb
     color = (((r << 8) | g) << 8) | b
-    return "#{:x}".format(color)
+    return f"#{color:x}"
 
