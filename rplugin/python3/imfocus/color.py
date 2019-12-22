@@ -42,7 +42,7 @@ def term_to_rgb(index):
         return [8 + (index - 232) * 10] * 3
 
 
-def distance(rgb1, rgb2, weights=(1, 1, 1)):
+def color_distance(rgb1, rgb2, weights=(1, 1, 1)):
     return sum([w * (ch1 - ch2)**2 for w, ch1, ch2 in zip(weights, rgb1, rgb2)])
 
 
@@ -51,8 +51,8 @@ def rgb_to_closest_term(rgb):
     min_distance = None
     # check ansi16 and grayscale colors
     for i in chain(range(16), range(232, 256)):
-        if (min_distance is None
-                or distance(rgb, term_to_rgb(i)) < min_distance):
+        distance = color_distance(rgb, term_to_rgb(i))
+        if min_distance is None or distance < min_distance:
             min_distance = distance
             index = i
     # check the closest color in 6x6x6 terminal color cube
@@ -63,7 +63,7 @@ def rgb_to_closest_term(rgb):
             return round((c - 95) / 40) + 1
     r216, g216, b216 = map(get_channel216, rgb)
     i = (r216 * 6 + g216) * 6 + b216
-    if distance(rgb, term_to_rgb(i)) < min_distance:
+    if color_distance(rgb, term_to_rgb(i)) < min_distance:
         index = i
     return index
 
@@ -77,7 +77,6 @@ def rgb_blend(rgb1, rgb2, coeff):
 
 
 def rgb_decompose(color):
-    color = int(color)
     r = (color >> 16) & 0xff
     g = (color >> 8) & 0xff
     b = color & 0xff
@@ -88,4 +87,9 @@ def rgb_to_vim_color(rgb):
     r, g, b = rgb
     color = (((r << 8) | g) << 8) | b
     return f"#{color:x}"
+
+
+def vim_color_to_rgb(vim_color):
+    color = int(vim_color.replace("#", "0x"), 0)
+    return rgb_decompose(color)
 

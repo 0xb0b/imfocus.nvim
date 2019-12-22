@@ -1,0 +1,34 @@
+focus:
+- iterate over lines from top to bottom of the screen to get ranges of text
+  nvim_buf_get_lines(start, end, is_strict)
+    0-based indexing
+  color and change color
+    line number: 1-based
+    column number: from 1 to col("$") - 1, 1-based
+      col() returns byte position
+    colors: synIDattr(synIDtrans(synID(<line num>, <col num>, 1)), "fg/bg")
+      is col a screen position or byte position?
+      weird: if a character is not a whitespace and synID is 0 this is Normal
+             highlight group;
+             if normal text is highlighted (by search for example) the synID
+             is still 0!
+      ! Warning: This function can be very slow.
+    range: (start col, syntax id)
+      change color
+        get highlighting group from the cache or add if not found (string set)
+          key: const name + hash of (color + lightness)
+            lightness: integer from 0 to max, 0 - Normal bg, max - color
+              max + 1 = 16 is enough number of shades?
+            lightness is calculated based on the distance to the focused region
+            and settings
+        matchaddpos(highlight group, [line, col, length])
+          line and col are 1-based, col and length in bytes
+    optimization:
+      store ranges in the cache
+        key: hash of (line string + colorscheme)
+        value: list of ranges
+
+unfocus:
+- clear highlights added by matchaddpos()
+    matchdelete(id)
+
