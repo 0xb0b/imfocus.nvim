@@ -68,7 +68,7 @@ def rgb_to_closest_term(rgb):
     return index
 
 
-def rgb_blend(rgb1, rgb2, coeff):
+def blend_rgb(rgb1, rgb2, coeff):
     # blending coefficient 0 results in pure color1,
     # coefficient 1 results in pure color2
     # linear
@@ -76,7 +76,7 @@ def rgb_blend(rgb1, rgb2, coeff):
             for ch1, ch2 in zip(rgb1, rgb2)]
 
 
-def rgb_decompose(color):
+def decompose_rgb(color):
     r = (color >> 16) & 0xff
     g = (color >> 8) & 0xff
     b = color & 0xff
@@ -86,10 +86,10 @@ def rgb_decompose(color):
 def rgb_to_vim_color(rgb):
     r, g, b = rgb
     color = (((r << 8) | g) << 8) | b
-    return f"#{color:x}"
+    return f"#{color:06x}"
 
 
 def vim_color_to_rgb(vim_color):
     color = int(vim_color.replace("#", "0x"), 0)
-    return rgb_decompose(color)
+    return decompose_rgb(color)
 

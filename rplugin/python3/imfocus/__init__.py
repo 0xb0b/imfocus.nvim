@@ -41,6 +41,12 @@ class ImFocus:
     def on_insert_leave(self):
         unfocus(self.nvim, self.impl)
 
+    @pynvim.autocmd("ColorScheme", pattern="*", sync=True)
+    def on_colors_changed(self):
+        if self.impl is not None:
+            disable_impl(self.nvim, self.impl)
+            enable_impl(self.nvim, self.impl)
+
     @pynvim.command("Imfocuson", sync=True)
     def enable(self):
         if self.impl is None:
