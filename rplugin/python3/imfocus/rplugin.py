@@ -187,20 +187,21 @@ def focus(nvim, plugin):
 
         # first visible line in a window (1-based line numbers)
         top_line_num = nvim.funcs.line("w0")
-        # last visible line in a window
-        bottom_line_num = nvim.funcs.line("w$")
+
+        # one past last or last visible line in a window
+        # if the last line is too long and is wrapped into several screen lines
+        # and some of those screen lines fall off the bottom edge then line()
+        # function returns the previous line number;
+        # so the precise return value of line() is the number of the last fully
+        # visible line
+        bottom_line_num = nvim.funcs.line("w$") + 1
 
         # first line in focus
-        focus_start = max(top_line_num, cursor_line - plugin.settings.focus_size)
+        focus_start = max(top_line_num,
+                          cursor_line - plugin.settings.focus_size)
         # last line in focus
-        focus_end = min(bottom_line_num, cursor_line + plugin.settings.focus_size)
-
-#          # first line of the top soft shadow part
-        #  soft_shadow_start = max(top_line_num,
-                                #  focus_start - plugin.settings.soft_shadow_size)
-        #  # last line of the bottom soft shadow part
-        #  soft_shadow_end = min(bottom_line_num,
-                              #  focus_end + plugin.settings.soft_shadow_size)
+        focus_end = min(bottom_line_num,
+                        cursor_line + plugin.settings.focus_size)
 
         # nvim_buf_get_lines() uses 0-based indexing
         lines = nvim.current.buffer.api.get_lines(top_line_num - 1,
