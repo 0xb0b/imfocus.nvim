@@ -30,7 +30,7 @@ def term_to_rgb(index):
     elif index < 232:
         # 6x6x6 rgb colors: 16 - 231
         # each channel in terminal color cube has one of the 6 values:
-        # 0, 0x5f, 0x87, 0xaf, 0xd7, 0xff
+        # 0, 0x5f (95), 0x87 (135), 0xaf (175), 0xd7 (215), 0xff (255)
         index -= 16
         b = index % 6
         index //= 6
@@ -47,6 +47,7 @@ def color_distance(rgb1, rgb2, weights=(1, 1, 1)):
 
 
 def rgb_to_closest_term(rgb):
+    # TODO looks like this does not work correctly
     index = 0
     min_distance = None
     # check ansi16 and grayscale colors
@@ -56,13 +57,10 @@ def rgb_to_closest_term(rgb):
             min_distance = distance
             index = i
     # check the closest color in 6x6x6 terminal color cube
-    def get_channel216(c):
-        if c < 95:
-            return round(c / 95)
-        else:
-            return round((c - 95) / 40) + 1
+    get_channel216 = (lambda c: round(c / 95) if c < 95
+                                else round((c - 95) / 40) + 1)
     r216, g216, b216 = map(get_channel216, rgb)
-    i = (r216 * 6 + g216) * 6 + b216
+    i = 16 + (r216 * 6 + g216) * 6 + b216
     if color_distance(rgb, term_to_rgb(i)) < min_distance:
         index = i
     return index

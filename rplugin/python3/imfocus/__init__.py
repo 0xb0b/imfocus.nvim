@@ -12,7 +12,8 @@ from imfocus.rplugin import disable as disable_impl
 # several files) then it works only if the plugin class and handlers are in
 # __init__.py.
 # so the structure in this case is a minimal plugin class with all the handlers
-# in __init__.py along a possibly separate implementation and other package files
+# in __init__.py along a possibly separate implementation and other files of
+# the package
 
 @pynvim.plugin
 class ImFocus:
@@ -23,7 +24,7 @@ class ImFocus:
         self.nvim = nvim
         self.impl = None
 
-    # handlers have to be synchronous to avoid race conditions, like:
+    # synchronous handlers avoid race conditions, like:
     #     on_insert_leave clears state variable when on_insert_enter has already set it;
     #     then on_insert_enter tries to use invalid variable
 
