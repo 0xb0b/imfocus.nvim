@@ -21,6 +21,16 @@ class Settings:
         self.shadow_hl_group = None
         self.shadow_fg_rgb = None
 
+        self.normal_fg_rgb, self.normal_bg_rgb = get_colors_by_hl_name(
+            nvim, normal_hl_group)
+        if self.normal_fg_rgb is None or self.normal_bg_rgb is None:
+            # normal colors are needed because they are used as fallback if
+            # shadow colors are not defined explicitly;
+            # normal colors are also assumed when syntax id is returned as zero
+            nvim.err_write(f"{plugin_name} is disabled, "
+                            "normal colors undefined\n")
+            return
+
         # number of lines in focus is (2 * k + 1)
         # focus_size parameter is k
         self.focus_size = (max(1, nvim.vars.get(g_focus_size, 1)) - 1) // 2
@@ -36,16 +46,6 @@ class Settings:
         shadow_fg = nvim.vars.get(g_shadow_color, None)
         if shadow_fg is not None:
             self.shadow_fg_rgb = decompose_rgb(shadow_fg)
-
-        self.normal_fg_rgb, self.normal_bg_rgb = get_colors_by_hl_name(
-            nvim, normal_hl_group)
-        if self.normal_fg_rgb is None or self.normal_bg_rgb is None:
-            # normal colors are needed because they are used as fallback if
-            # shadow colors are not defined explicitly;
-            # normal colors are also assumed when syntax id is returned as zero
-            nvim.err_write(f"{plugin_name} is disabled, "
-                            "normal colors undefined\n")
-            return
 
         # fallback to Normal colors if shadow colors are undefined
         if self.shadow_fg_rgb is None:
@@ -261,7 +261,9 @@ def focus(nvim, plugin):
         line_num = top_line_num - 1
         for line in lines:
             line_num += 1
-            if line_num >= focus_start and line_num <= focus_end:
+            if (not line or line.isspace()
+                         or (line_num >= focus_start and line_num <= focus_end)):
+                # do not highlight empty lines and lines in focus
                 continue
 
             distance_to_focus = (focus_start - line_num
