@@ -57,8 +57,8 @@ def rgb_to_closest_term(rgb):
             min_distance = distance
             index = i
     # check the closest color in 6x6x6 terminal color cube
-    get_channel216 = (lambda c: round(c / 95) if c < 95
-                                else round((c - 95) / 40) + 1)
+    def get_channel216(c): return (round(c / 95) if c < 95
+                                   else round((c - 95) / 40) + 1)
     r216, g216, b216 = map(get_channel216, rgb)
     i = 16 + (r216 * 6 + g216) * 6 + b216
     if color_distance(rgb, term_to_rgb(i)) < min_distance:

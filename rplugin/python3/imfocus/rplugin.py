@@ -12,7 +12,7 @@ default_min_lightness = 0.2
 # global variable names
 g_focus_size = plugin_name + "_size"
 g_soft_shadow_size = plugin_name + "_soft_shadow_size"
-g_shadow_hl_group = plugin_name + "_shadow_hl_group"
+g_shadow_color = plugin_name + "_shadow_color"
 g_min_lightness = plugin_name + "_min_lightness"
 
 
@@ -20,8 +20,6 @@ class Settings:
     def __init__(self, nvim):
         self.shadow_hl_group = None
         self.shadow_fg_rgb = None
-        # TODO remove shadow rgb and use only foreground color?
-        self.shadow_bg_rgb = None
 
         # number of lines in focus is (2 * k + 1)
         # focus_size parameter is k
@@ -35,10 +33,9 @@ class Settings:
         self.is_rgb_hl = (get_option(nvim, "gui_running", False)
                           or get_option(nvim, "termguicolors", False))
 
-        shadow_hl_group = nvim.vars.get(g_shadow_hl_group, None)
-        if shadow_hl_group is not None and nvim.funcs.hlexists(shadow_hl_group):
-            self.shadow_fg_rgb, self.shadow_bg_rgb = get_colors_by_hl_name(
-                nvim, shadow_hl_group)
+        shadow_fg = nvim.vars.get(g_shadow_color, None)
+        if shadow_fg is not None:
+            self.shadow_fg_rgb = decompose_rgb(shadow_fg)
 
         self.normal_fg_rgb, self.normal_bg_rgb = get_colors_by_hl_name(
             nvim, normal_hl_group)
@@ -51,25 +48,23 @@ class Settings:
             return
 
         # fallback to Normal colors if shadow colors are undefined
-        if self.shadow_bg_rgb is None:
-            self.shadow_bg_rgb = self.normal_bg_rgb
         if self.shadow_fg_rgb is None:
             min_lightness = nvim.vars.get(g_min_lightness,
                                           default_min_lightness)
             self.shadow_fg_rgb = blend_rgb(
-                self.shadow_bg_rgb, self.normal_fg_rgb, min_lightness)
+                self.normal_bg_rgb, self.normal_fg_rgb, min_lightness)
 
         self.shadow_hl_group = make_hl_group_name(
-            nvim, self.shadow_fg_rgb, self.shadow_bg_rgb)
+            nvim, self.shadow_fg_rgb, self.normal_bg_rgb)
         highlight(nvim, self.is_rgb_hl, self.shadow_hl_group,
-                  self.shadow_fg_rgb, self.shadow_bg_rgb)
+                  self.shadow_fg_rgb)
 
         # if highlight is 256 colors terminal then rgb colors are calculated
         # approximately;
         # get rgb values of terminal colors that were approximated from the
         # original color values
         if not self.is_rgb_hl:
-            self.shadow_fg_rgb, self.shadow_bg_rgb = get_colors_by_hl_name(
+            self.shadow_fg_rgb, _ = get_colors_by_hl_name(
                 nvim, self.shadow_hl_group)
 
         # cache highlight groups of the soft shadow colors
@@ -191,7 +186,7 @@ def get_hl_group(nvim, settings, distance, syntax_id):
     if not hl_group in settings.hl_groups:
         lightness = settings.lightness_profile[distance]
         fg_rgb = blend_rgb(settings.shadow_fg_rgb, fg_rgb, lightness)
-        bg_rgb = blend_rgb(settings.shadow_bg_rgb, bg_rgb, lightness)
+        bg_rgb = blend_rgb(settings.normal_bg_rgb, bg_rgb, lightness)
         highlight(nvim, settings.is_rgb_hl, hl_group, fg_rgb, bg_rgb)
         settings.hl_groups.add(hl_group)
 
