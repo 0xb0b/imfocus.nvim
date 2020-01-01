@@ -75,6 +75,8 @@ def blend_rgb(rgb1, rgb2, coeff):
 
 
 def decompose_rgb(color):
+    if color < 0:
+        return None
     r = (color >> 16) & 0xff
     g = (color >> 8) & 0xff
     b = color & 0xff
@@ -87,7 +89,8 @@ def rgb_to_vim_color(rgb):
     return f"#{color:06x}"
 
 
-def vim_color_to_rgb(vim_color):
-    color = int(vim_color.replace("#", "0x"), 0)
+def vim_color_to_rgb(nvim, vim_color):
+    normalized_name = vim_color.replace(" ", "").lower()
+    color = nvim.api.get_color_by_name(normalized_name)
     return decompose_rgb(color)
 

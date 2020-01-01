@@ -21,11 +21,13 @@ class Settings:
         self.shadow_hl_group = None
         self.shadow_fg_rgb = None
 
-        self.normal_fg_rgb, self.normal_bg_rgb = get_colors_by_hl_name(
-            nvim, normal_hl_group)
+        # special color names 'fg' and 'bg' mean normal highlighting colors
+        self.normal_fg_rgb = decompose_rgb(nvim.api.get_color_by_name('fg'))
+        self.normal_bg_rgb = decompose_rgb(nvim.api.get_color_by_name('bg'))
         if self.normal_fg_rgb is None or self.normal_bg_rgb is None:
             # normal colors are needed because they are used as fallback if
-            # shadow colors are not defined explicitly;
+            # shadow color is not defined explicitly;
+            # normal background is used as shadow background;
             # normal colors are also assumed when syntax id is returned as zero
             nvim.err_write(f"{plugin_name} is disabled, "
                             "normal colors undefined\n")
@@ -59,15 +61,13 @@ class Settings:
         highlight(nvim, self.is_rgb_hl, self.shadow_hl_group,
                   self.shadow_fg_rgb)
 
-        # if highlight is 256 colors terminal then rgb colors are calculated
-        # approximately;
-        # get rgb values of terminal colors that were approximated from the
-        # original color values
+        # for 256 colors terminal highlihgting get rgb values of terminal
+        # colors that were approximated from the original rgb color values
         if not self.is_rgb_hl:
             self.shadow_fg_rgb, _ = get_colors_by_hl_name(
                 nvim, self.shadow_hl_group)
 
-        # cache highlight groups of the soft shadow colors
+        # cache highlighting groups of the soft shadow colors
         self.hl_groups = set()
 
         self.lightness_profile = [1.0] * (self.soft_shadow_size + 1)
@@ -103,7 +103,6 @@ def get_colors_by_hl_name(nvim, hl_group):
     except NvimError:
         hl_string = ''
     # Normal         xxx ctermfg=223 ctermbg=235 guifg=#ebdbb2 guibg=#282828
-    # TODO add handling of color names and special names (see :help guifg)
     terms = hl_string.split()
     for term in terms:
         if "=" not in term:
@@ -119,14 +118,22 @@ def get_colors_by_hl_name(nvim, hl_group):
             guibg = value
 
     if guifg is not None:
-        fg_rgb = vim_color_to_rgb(guifg)
+        fg_rgb = vim_color_to_rgb(nvim, guifg)
     elif ctermfg is not None:
-        fg_rgb = term_to_rgb(int(ctermfg))
+        try:
+            ctermfg = int(ctermfg)
+            fg_rgb = term_to_rgb(ctermfg)
+        except ValueError:
+            fg_rgb = vim_color_to_rgb(nvim, ctermfg)
 
     if guibg is not None:
-        bg_rgb = vim_color_to_rgb(guibg)
+        bg_rgb = vim_color_to_rgb(nvim, guibg)
     elif ctermbg is not None:
-        bg_rgb = term_to_rgb(int(ctermbg))
+        try:
+            ctermbg = int(ctermbg)
+            bg_rgb = term_to_rgb(ctermbg)
+        except ValueError:
+            bg_rgb = vim_color_to_rgb(nvim, ctermbg)
 
     return fg_rgb, bg_rgb
 
@@ -134,7 +141,8 @@ def get_colors_by_hl_name(nvim, hl_group):
 def make_hl_group_name(nvim, fg_rgb, bg_rgb, distance=None):
     # shadow highlight group name:
     #   const name + vim fg color string + vim bg color string
-    #   + distance to focus in the interval [1, soft_shadow_size] or None
+    #   + distance to focus in the interval [1, soft_shadow_size]
+    #     or None for complete shadow
     return (plugin_name + rgb_to_vim_color(fg_rgb)
             + rgb_to_vim_color(bg_rgb) + str(distance))
 
@@ -166,15 +174,13 @@ def get_hl_group(nvim, settings, distance, syntax_id):
     # Normal highlighting is used for this
     if syntax_id:
         syntax_id = nvim.funcs.synIDtrans(syntax_id)
-        #  hl_group = nvim.funcs.synIDattr(syntax_id, "name")
-        #  fg_rgb, bg_rgb = get_colors_by_hl_name(nvim, hl_group)
         fg = nvim.funcs.synIDattr(syntax_id, "fg#")
         if fg:
-            fg_rgb = (vim_color_to_rgb(fg) if settings.is_rgb_hl
+            fg_rgb = (vim_color_to_rgb(nvim, fg) if settings.is_rgb_hl
                       else term_to_rgb(int(fg)))
         bg = nvim.funcs.synIDattr(syntax_id, "bg#")
         if bg:
-            bg_rgb = (vim_color_to_rgb(bg) if settings.is_rgb_hl
+            bg_rgb = (vim_color_to_rgb(nvim, bg) if settings.is_rgb_hl
                       else term_to_rgb(int(bg)))
 
     if fg_rgb is None:
