@@ -86,11 +86,11 @@ def decompose_rgb(color):
 def rgb_to_vim_color(rgb):
     r, g, b = rgb
     color = (((r << 8) | g) << 8) | b
-    return f"#{color:06x}"
+    return f'#{color:06x}'
 
 
 def vim_color_to_rgb(nvim, vim_color):
-    normalized_name = vim_color.replace(" ", "").lower()
+    normalized_name = vim_color.replace(' ', '').lower()
     color = nvim.api.get_color_by_name(normalized_name)
     return decompose_rgb(color)
 

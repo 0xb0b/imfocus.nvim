@@ -28,33 +28,33 @@ class ImFocus:
     #     on_insert_leave clears state variable when on_insert_enter has already set it;
     #     then on_insert_enter tries to use invalid variable
 
-    @pynvim.autocmd("InsertEnter", pattern="*", sync=True)
+    @pynvim.autocmd('InsertEnter', pattern='*', sync=True)
     def on_insert_enter(self):
         if self.impl is None:
             self.impl = PlugImpl(self.nvim)
         focus(self.nvim, self.impl)
 
-    @pynvim.autocmd("CursorMovedI", pattern="*", sync=True)
+    @pynvim.autocmd('CursorMovedI', pattern='*', sync=True)
     def on_cursor_moved(self):
         focus(self.nvim, self.impl)
 
-    @pynvim.autocmd("InsertLeave", pattern="*", sync=True)
+    @pynvim.autocmd('InsertLeave', pattern='*', sync=True)
     def on_insert_leave(self):
         unfocus(self.nvim, self.impl)
 
-    @pynvim.autocmd("ColorScheme", pattern="*", sync=True)
+    @pynvim.autocmd('ColorScheme', pattern='*', sync=True)
     def on_colors_changed(self):
         if self.impl is not None:
             disable_impl(self.nvim, self.impl)
             enable_impl(self.nvim, self.impl)
 
-    @pynvim.command("Imfocuson", sync=True)
+    @pynvim.command('Imfocuson', sync=True)
     def enable(self):
         if self.impl is None:
             self.impl = PlugImpl(self.nvim)
         enable_impl(self.nvim, self.impl)
 
-    @pynvim.command("Imfocusoff", sync=True)
+    @pynvim.command('Imfocusoff', sync=True)
     def disable(self):
         if self.impl is not None:
             disable_impl(self.nvim, self.impl)

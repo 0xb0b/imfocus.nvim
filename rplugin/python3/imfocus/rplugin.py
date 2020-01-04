@@ -5,15 +5,15 @@ from imfocus.color import (blend_rgb, decompose_rgb,
                            term_to_rgb, rgb_to_closest_term)
 
 
-plugin_name = __name__.partition(".")[0]
-normal_hl_group = "Normal"
+plugin_name = __name__.partition('.')[0]
+normal_hl_group = 'Normal'
 default_min_lightness = 0.2
 
 # global variable names
-g_focus_size = plugin_name + "_size"
-g_soft_shadow_size = plugin_name + "_soft_shadow_size"
-g_shadow_color = plugin_name + "_shadow_color"
-g_min_lightness = plugin_name + "_min_lightness"
+g_focus_size = plugin_name + '_size'
+g_soft_shadow_size = plugin_name + '_soft_shadow_size'
+g_shadow_color = plugin_name + '_shadow_color'
+g_min_lightness = plugin_name + '_min_lightness'
 
 
 class Settings:
@@ -29,8 +29,8 @@ class Settings:
             # shadow color is not defined explicitly;
             # normal background is used as shadow background;
             # normal colors are also assumed when syntax id is returned as zero
-            nvim.err_write(f"{plugin_name} is disabled, "
-                            "normal colors undefined\n")
+            nvim.err_write(f'{plugin_name} is disabled, '
+                            'normal colors undefined\n')
             return
 
         # number of lines in focus is (2 * k + 1)
@@ -42,8 +42,8 @@ class Settings:
         # by default the shadow is hard
         self.soft_shadow_size = max(0, nvim.vars.get(g_soft_shadow_size, 0))
 
-        self.is_rgb_hl = (get_option(nvim, "gui_running", False)
-                          or get_option(nvim, "termguicolors", False))
+        self.is_rgb_hl = (get_option(nvim, 'gui_running', False)
+                          or get_option(nvim, 'termguicolors', False))
 
         shadow_fg = nvim.vars.get(g_shadow_color, None)
         if shadow_fg is not None:
@@ -99,22 +99,22 @@ def get_colors_by_hl_name(nvim, hl_group):
     guibg = None
 
     try:
-        hl_string = nvim.funcs.execute(f"hi {hl_group}")
+        hl_string = nvim.funcs.execute(f'hi {hl_group}')
     except NvimError:
         hl_string = ''
     # Normal         xxx ctermfg=223 ctermbg=235 guifg=#ebdbb2 guibg=#282828
     terms = hl_string.split()
     for term in terms:
-        if "=" not in term:
+        if '=' not in term:
             continue
-        key, value = term.split("=")
-        if key == "ctermfg":
+        key, value = term.split('=')
+        if key == 'ctermfg':
             ctermfg = value
-        if key == "ctermbg":
+        if key == 'ctermbg':
             ctermbg = value
-        if key == "guifg":
+        if key == 'guifg':
             guifg = value
-        if key == "guibg":
+        if key == 'guibg':
             guibg = value
 
     if guifg is not None:
@@ -148,17 +148,17 @@ def make_hl_group_name(nvim, fg_rgb, bg_rgb, distance=None):
 
 
 def highlight(nvim, is_rgb_hl, hl_group, fg_rgb=None, bg_rgb=None):
-    command = f"highlight {hl_group}"
+    command = f'highlight {hl_group}'
     if fg_rgb is not None:
-        fgtype = "guifg" if is_rgb_hl else "ctermfg"
+        fgtype = 'guifg' if is_rgb_hl else 'ctermfg'
         color = (rgb_to_vim_color(fg_rgb) if is_rgb_hl
                  else rgb_to_closest_term(fg_rgb))
-        command += f" {fgtype}={color}"
+        command += f' {fgtype}={color}'
     if bg_rgb is not None:
-        bgtype = "guibg" if is_rgb_hl else "ctermbg"
+        bgtype = 'guibg' if is_rgb_hl else 'ctermbg'
         color = (rgb_to_vim_color(bg_rgb) if is_rgb_hl
                  else rgb_to_closest_term(bg_rgb))
-        command += f" {bgtype}={color}"
+        command += f' {bgtype}={color}'
     nvim.funcs.execute(command)
 
 
@@ -174,11 +174,11 @@ def get_hl_group(nvim, settings, distance, syntax_id):
     # Normal highlighting is used for this
     if syntax_id:
         syntax_id = nvim.funcs.synIDtrans(syntax_id)
-        fg = nvim.funcs.synIDattr(syntax_id, "fg#")
+        fg = nvim.funcs.synIDattr(syntax_id, 'fg#')
         if fg:
             fg_rgb = (vim_color_to_rgb(nvim, fg) if settings.is_rgb_hl
                       else term_to_rgb(int(fg)))
-        bg = nvim.funcs.synIDattr(syntax_id, "bg#")
+        bg = nvim.funcs.synIDattr(syntax_id, 'bg#')
         if bg:
             bg_rgb = (vim_color_to_rgb(nvim, bg) if settings.is_rgb_hl
                       else term_to_rgb(int(bg)))
@@ -226,7 +226,7 @@ def disable(nvim, plugin):
     if is_enabled(plugin):
         unfocus(nvim, plugin)
         for hl_group in plugin.settings.hl_groups:
-            nvim.funcs.execute(f"highlight clear {hl_group}")
+            nvim.funcs.execute(f'highlight clear {hl_group}')
         plugin.state.enabled = False
         plugin.settings = None
 
@@ -239,7 +239,7 @@ def focus(nvim, plugin):
         plugin.state.cursor_line = cursor_line
 
         # first visible line in a window (1-based line numbers)
-        top_line_num = nvim.funcs.line("w0")
+        top_line_num = nvim.funcs.line('w0')
 
         # last or one past last line in a window.
         # if the last line is too long and is wrapped into several screen lines
@@ -249,7 +249,7 @@ def focus(nvim, plugin):
         # (penultimate) line;
         # so more precisely the return value of line() is the number of the
         # last fully visible line in a window
-        bottom_line_num = nvim.funcs.line("w$") + 1
+        bottom_line_num = nvim.funcs.line('w$') + 1
 
         # first line in focus
         focus_start = max(top_line_num,
@@ -290,7 +290,7 @@ def focus(nvim, plugin):
             syntax_id = None
 
             # col() returns byte position
-            byte_one_past_end = nvim.funcs.col([line_num, "$"])
+            byte_one_past_end = nvim.funcs.col([line_num, '$'])
             for col in range(1, byte_one_past_end):
                 current_id = nvim.funcs.synID(line_num, col, 1)
                 if current_id != syntax_id:
