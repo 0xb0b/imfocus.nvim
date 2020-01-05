@@ -1,7 +1,7 @@
 import pynvim
-from imfocus.rplugin import PlugImpl, focus, unfocus
-from imfocus.rplugin import enable as enable_impl
-from imfocus.rplugin import disable as disable_impl
+from isee.rplugin import PlugImpl, focus, unfocus
+from isee.rplugin import enable as enable_impl
+from isee.rplugin import disable as disable_impl
 
 # https://pynvim.readthedocs.io/en/latest/usage/remote-plugins.html
 # @pynvim.plugin decorator makes a class discoverable as a plugin and provides
@@ -16,7 +16,7 @@ from imfocus.rplugin import disable as disable_impl
 # the package
 
 @pynvim.plugin
-class ImFocus:
+class Isee:
     def __init__(self, nvim):
         # do not do anything that has non-trivial side-effects here! seriously.
         # (including the initialization of the plugin implementation)
@@ -48,13 +48,13 @@ class ImFocus:
             disable_impl(self.nvim, self.impl)
             enable_impl(self.nvim, self.impl)
 
-    @pynvim.command('Imfocuson', sync=True)
+    @pynvim.command('Iseeon', sync=True)
     def enable(self):
         if self.impl is None:
             self.impl = PlugImpl(self.nvim)
         enable_impl(self.nvim, self.impl)
 
-    @pynvim.command('Imfocusoff', sync=True)
+    @pynvim.command('Iseeoff', sync=True)
     def disable(self):
         if self.impl is not None:
             disable_impl(self.nvim, self.impl)

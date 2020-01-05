@@ -1,8 +1,8 @@
 from math import sqrt
 from pynvim.api.nvim import NvimError
-from imfocus.color import (blend_rgb, decompose_rgb,
-                           rgb_to_vim_color, vim_color_to_rgb,
-                           term_to_rgb, rgb_to_closest_term)
+from isee.color import (blend_rgb, decompose_rgb,
+                        rgb_to_vim_color, vim_color_to_rgb,
+                        term_to_rgb, rgb_to_closest_term)
 
 
 plugin_name = __name__.partition('.')[0]
