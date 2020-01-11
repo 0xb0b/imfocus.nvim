@@ -4,23 +4,23 @@ from itertools import chain
 # look-up table for the first 16 of 256 terminal colors
 ansi16 = (
     # ANSI normal 0 - 7
-    (0, 0, 0),
-    (128, 0, 0),
-    (0, 128, 0),
-    (128,128, 0),
-    (0, 0, 128),
-    (128, 0, 128),
-    (0, 128, 128),
-    (192, 192, 192),
+    [0, 0, 0],
+    [128, 0, 0],
+    [0, 128, 0],
+    [128,128, 0],
+    [0, 0, 128],
+    [128, 0, 128],
+    [0, 128, 128],
+    [192, 192, 192],
     # ANSI highlight 8 - 15
-    (128, 128, 128),
-    (255, 0, 0),
-    (0, 255, 0),
-    (255, 255, 0),
-    (0, 0, 255),
-    (255, 0, 255),
-    (0, 255, 255),
-    (255, 255, 255)
+    [128, 128, 128],
+    [255, 0, 0],
+    [0, 255, 0],
+    [255, 255, 0],
+    [0, 0, 255],
+    [255, 0, 255],
+    [0, 255, 255],
+    [255, 255, 255]
 )
 
 
@@ -47,7 +47,6 @@ def color_distance(rgb1, rgb2, weights=(1, 1, 1)):
 
 
 def rgb_to_closest_term(rgb):
-    # TODO looks like this does not work correctly
     index = 0
     min_distance = None
     # check ansi16 and grayscale colors
@@ -70,6 +69,7 @@ def blend_rgb(rgb1, rgb2, coeff):
     # blending coefficient 0 results in pure color1,
     # coefficient 1 results in pure color2
     # linear
+    coeff = max(0.0, min(1.0, coeff))  # clamp to [0, 1]
     return [round((1 - coeff) * ch1 + coeff * ch2)
             for ch1, ch2 in zip(rgb1, rgb2)]
 
@@ -80,7 +80,7 @@ def decompose_rgb(color):
     r = (color >> 16) & 0xff
     g = (color >> 8) & 0xff
     b = color & 0xff
-    return r, g, b
+    return [r, g, b]
 
 
 def rgb_to_vim_color(rgb):
