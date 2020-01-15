@@ -8,3 +8,4 @@ def test_make_hl_group_name():
 
     assert shadow_hl_group == plugin_name + '#8f8f8f#1a2b3cNone'
     assert soft_shadow_hl_group == plugin_name + '#707172#1a2b3c2'
+
