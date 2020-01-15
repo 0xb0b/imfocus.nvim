@@ -57,7 +57,7 @@ class Settings:
                 self.normal_bg_rgb, self.normal_fg_rgb, min_lightness)
 
         self.shadow_hl_group = make_hl_group_name(
-            nvim, self.shadow_fg_rgb, self.normal_bg_rgb)
+            self.shadow_fg_rgb, self.normal_bg_rgb)
         highlight(nvim, self.is_rgb_hl, self.shadow_hl_group,
                   self.shadow_fg_rgb)
 
@@ -138,7 +138,7 @@ def get_colors_by_hl_name(nvim, hl_group):
     return fg_rgb, bg_rgb
 
 
-def make_hl_group_name(nvim, fg_rgb, bg_rgb, distance=None):
+def make_hl_group_name(fg_rgb, bg_rgb, distance=None):
     # shadow highlight group name:
     #   const name + vim fg color string + vim bg color string
     #   + distance to focus in the interval [1, soft_shadow_size]
@@ -188,7 +188,7 @@ def get_hl_group(nvim, settings, distance, syntax_id):
     if bg_rgb is None:
         bg_rgb = settings.normal_bg_rgb
 
-    hl_group = make_hl_group_name(nvim, fg_rgb, bg_rgb, distance)
+    hl_group = make_hl_group_name(fg_rgb, bg_rgb, distance)
     if not hl_group in settings.hl_groups:
         lightness = settings.lightness_profile[distance]
         fg_rgb = blend_rgb(settings.shadow_fg_rgb, fg_rgb, lightness)

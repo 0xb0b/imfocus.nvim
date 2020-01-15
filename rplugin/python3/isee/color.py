@@ -42,25 +42,25 @@ def term_to_rgb(index):
         return [8 + (index - 232) * 10] * 3
 
 
-def color_distance(rgb1, rgb2, weights=(1, 1, 1)):
+def color_distance2(rgb1, rgb2, weights=(1, 1, 1)):
     return sum([w * (ch1 - ch2)**2 for w, ch1, ch2 in zip(weights, rgb1, rgb2)])
 
 
 def rgb_to_closest_term(rgb):
     index = 0
-    min_distance = None
+    min_distance_sq = None
     # check ansi16 and grayscale colors
     for i in chain(range(16), range(232, 256)):
-        distance = color_distance(rgb, term_to_rgb(i))
-        if min_distance is None or distance < min_distance:
-            min_distance = distance
+        distance_sq = color_distance2(rgb, term_to_rgb(i))
+        if min_distance_sq is None or distance_sq < min_distance_sq:
+            min_distance_sq = distance_sq
             index = i
     # check the closest color in 6x6x6 terminal color cube
     def get_channel216(c): return (round(c / 95) if c < 95
                                    else round((c - 95) / 40) + 1)
     r216, g216, b216 = map(get_channel216, rgb)
     i = 16 + (r216 * 6 + g216) * 6 + b216
-    if color_distance(rgb, term_to_rgb(i)) < min_distance:
+    if color_distance2(rgb, term_to_rgb(i)) < min_distance_sq:
         index = i
     return index
 
