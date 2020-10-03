@@ -1,5 +1,5 @@
 import pynvim
-from isee.rplugin import PlugImpl, focus, unfocus
+from isee.rplugin import PlugImpl, focus, focus_update, unfocus
 from isee.rplugin import enable as enable_impl
 from isee.rplugin import disable as disable_impl
 
@@ -35,8 +35,12 @@ class Isee:
         focus(self.nvim, self.impl)
 
     @pynvim.autocmd('CursorMovedI', pattern='*', sync=True)
-    def on_cursor_moved(self):
-        focus(self.nvim, self.impl)
+    def on_insert_cursor_moved(self):
+        focus_update(self.nvim, self.impl)
+
+    @pynvim.autocmd('TextChangedI', pattern='*', sync=True)
+    def on_insert_text_changed(self):
+        focus_update(self.nvim, self.impl)
 
     @pynvim.autocmd('InsertLeave', pattern='*', sync=True)
     def on_insert_leave(self):
@@ -56,6 +60,7 @@ class Isee:
 
     @pynvim.command('Iseeoff', sync=True)
     def disable(self):
-        if self.impl is not None:
-            disable_impl(self.nvim, self.impl)
+        if self.impl is None:
+            self.impl = PlugImpl(self.nvim)
+        disable_impl(self.nvim, self.impl)
 
