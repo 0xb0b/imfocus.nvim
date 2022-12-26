@@ -1,6 +1,6 @@
 from random import seed, randint
 from isee.color import (color_distance2, term_to_rgb, rgb_to_closest_term,
-                        blend_rgb, decompose_rgb, rgb_to_vim_color)
+                        blend_rgb, decompose_rgb, rgb_to_vim_color, rgb_to_vim_color_safe_chars)
 
 
 def test_term_to_rgb():
@@ -73,3 +73,8 @@ def test_rgb_to_vim_color():
     assert rgb_to_vim_color([15, 31, 63]) == '#0f1f3f'
     assert rgb_to_vim_color([0, 0x2b, 0x3c]) == '#002b3c'
 
+
+def test_rgb_to_vim_color_safe_chars():
+    assert rgb_to_vim_color_safe_chars([0, 0, 0]) == '000000'
+    assert rgb_to_vim_color_safe_chars([15, 31, 63]) == '0f1f3f'
+    assert rgb_to_vim_color_safe_chars([0, 0x2b, 0x3c]) == '002b3c'

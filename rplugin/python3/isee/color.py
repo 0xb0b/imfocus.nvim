@@ -89,6 +89,10 @@ def rgb_to_vim_color(rgb):
     return f'#{color:06x}'
 
 
+def rgb_to_vim_color_safe_chars(rgb):
+    return rgb_to_vim_color(rgb).strip('#')
+
+
 def vim_color_to_rgb(nvim, vim_color):
     normalized_name = vim_color.replace(' ', '').lower()
     color = nvim.api.get_color_by_name(normalized_name)

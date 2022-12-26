@@ -1,8 +1,8 @@
 from math import sqrt
 from pynvim.api.nvim import NvimError
 from isee.color import (blend_rgb, decompose_rgb,
-                        rgb_to_vim_color, vim_color_to_rgb,
-                        term_to_rgb, rgb_to_closest_term)
+                        rgb_to_vim_color, rgb_to_vim_color_safe_chars,
+                        vim_color_to_rgb, term_to_rgb, rgb_to_closest_term)
 
 # dbg
 from time import sleep
@@ -98,7 +98,9 @@ def make_hl_group_name(fg_rgb, bg_rgb):
     #   const name + vim fg color string + vim bg color string
     #   + distance to focus in the interval [1, soft_shadow_size]
     #     or None for complete shadow
-    return f'{plugin_name}{rgb_to_vim_color(fg_rgb)}{rgb_to_vim_color(bg_rgb)}'
+    return (f'{plugin_name}'
+            f'{rgb_to_vim_color_safe_chars(fg_rgb)}'
+            f'{rgb_to_vim_color_safe_chars(bg_rgb)}')
 
 
 def activate_hl_group(nvim, is_rgb_hl, hl_group, fg_rgb=None, bg_rgb=None):
@@ -113,6 +115,7 @@ def activate_hl_group(nvim, is_rgb_hl, hl_group, fg_rgb=None, bg_rgb=None):
         color = (rgb_to_vim_color(bg_rgb) if is_rgb_hl
                  else rgb_to_closest_term(bg_rgb))
         command += f' {bgtype}={color}'
+    debug(nvim, f'#dbg {command}')
     nvim.funcs.execute(command)
 
 
